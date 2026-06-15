@@ -149,3 +149,80 @@ controller → cmd_vel_nav → velocity_smoother → cmd_vel_smoothed → collis
                                                                   watches /lidar
                                                                   stops robot if obstacle approaching
 ```
+
+---
+
+# How the whole system works
+
+## Step 1 — Gazebo (`gazebo.launch.py`)
+
+- Launches the maze world and spawns the robot at `(0, 0)`
+- Robot has two drive wheels (differential drive) and a LiDAR on top
+- `ros_gz_bridge` bridges Gazebo ↔ ROS 2:
+  - Gazebo LiDAR → `/lidar` (ROS LaserScan)
+  - Gazebo odometry → `/odom` (ROS Odometry)
+  - ROS `/cmd_vel` → Gazebo wheel commands (robot moves)
+
+## Step 2 — AMCL + Map Server (`amcl.launch.py`)
+
+**`map_server`** — loads `map/map.pgm` (pre-built image of the maze) and publishes it on `/map`
+
+**`amcl`** (Adaptive Monte Carlo Localization) — the robot's GPS
+- Compares live LiDAR readings against the known map to figure out where the robot is
+- Uses a particle filter — thousands of position guesses that converge to the real one
+- Needs an initial hint: click **2D Pose Estimate** in RViz or publish to `/initialpose`
+- Once it knows the position, publishes the `map → odom` TF transform
+- Completes the TF chain: `map → odom → base_link` (world → robot start → robot now)
+
+## Step 3 — Nav2 stack (`navigation.launch.py`)
+
+Nodes start in order, managed by lifecycle_manager:
+
+**`planner_server`** — given a goal, computes a path using NavFn (Dijkstra) on the global costmap (static map + known obstacles). Publishes path on `/plan`.
+
+**`controller_server`** — takes the path and generates velocity commands to follow it using MPPI (simulates thousands of trajectories, picks the best). Reads local costmap (live LiDAR) to avoid real-time obstacles. Publishes to `/cmd_vel_nav`.
+
+**`velocity_smoother`** — smooths jerky velocity commands into gradual acceleration/deceleration. Publishes to `/cmd_vel_smoothed`.
+
+**`collision_monitor`** — last safety check. Reads `/lidar` directly. Cuts velocity to zero if robot will hit something within 2 seconds. Bridges `cmd_vel_smoothed` → `cmd_vel` which Gazebo reads.
+
+**`bt_navigator`** — the brain. Runs a Behavior Tree (decision flowchart):
+```
+receive goal → compute path → follow path → if stuck → spin/backup → retry
+```
+Listens on `/goal_pose` for new goals, calls planner and controller as needed.
+
+**`behavior_server`** — recovery behaviors (spin, back up, wait) when robot gets stuck. bt_navigator calls these when the main plan fails.
+
+## Step 4 — Sending a goal
+
+1. Click **2D Pose Estimate** → AMCL locks in robot position → RViz aligns with Gazebo
+2. Click **2D Goal Pose** → RViz publishes to `/goal_pose` → bt_navigator receives it
+3. bt_navigator calls planner_server → gets path → calls controller_server
+4. Velocity flows: `cmd_vel_nav → velocity_smoother → cmd_vel_smoothed → collision_monitor → cmd_vel → Gazebo → robot moves`
+5. AMCL keeps updating position as robot moves
+6. Robot reaches goal → bt_navigator reports SUCCESS
+
+## Full data flow
+
+```
+LiDAR ──────────────────────────────────────────────────────┐
+  │                                                          │
+  ├──→ AMCL (where am I on the map?)                        │
+  │       └──→ map→odom TF transform                        │
+  │                                                          ▼
+  ├──→ local costmap (live obstacles)              collision_monitor
+  │                                                          │
+  └──→ global costmap (static map + obstacles)              │
+             │                                               ▼
+             ▼                                      cmd_vel → Gazebo → robot moves
+Goal ──→ bt_navigator
+              │
+              ├──→ planner_server → /plan (path)
+              │
+              └──→ controller_server → cmd_vel_nav
+                                            │
+                                      velocity_smoother
+                                            │
+                                      cmd_vel_smoothed
+```
