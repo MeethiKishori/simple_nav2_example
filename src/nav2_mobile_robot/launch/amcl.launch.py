@@ -24,7 +24,7 @@ def generate_launch_description():
                 executable="amcl",
                 name="amcl",
                 output="screen",
-                arguments=["--ros-args", "--log-level", "debug"],
+                arguments=["--ros-args", "--log-level", "info"],
                 parameters=[amcl_yaml],
             ),
             Node(
