@@ -25,15 +25,15 @@ This project implements a differential drive mobile robot in simulation using RO
 
 ```bash
 # Terminal 1 — Gazebo
-source /opt/ros/jazzy/setup.bash && source ~/shubham/wicon/simple_nav2_example/install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 launch nav2_mobile_robot gazebo.launch.py
 
 # Terminal 2 — SLAM
-source /opt/ros/jazzy/setup.bash && source ~/shubham/wicon/simple_nav2_example/install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 launch nav2_mobile_robot slam.launch.py
 
 # Terminal 3 — RViz
-source /opt/ros/jazzy/setup.bash && source ~/shubham/wicon/simple_nav2_example/install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 run rviz2 rviz2 -d src/nav2_mobile_robot/rviz/rviz.rviz
 
 # Terminal 4 — Teleop (drive around to build the map)
@@ -55,19 +55,19 @@ Uses the pre-built map in `map/map.pgm`. No SLAM needed.
 
 ```bash
 # Terminal 1 — Gazebo
-source /opt/ros/jazzy/setup.bash && source ~/shubham/wicon/simple_nav2_example/install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 launch nav2_mobile_robot gazebo.launch.py
 
 # Terminal 2 — AMCL + Map Server (localization)
-source /opt/ros/jazzy/setup.bash && source ~/shubham/wicon/simple_nav2_example/install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 launch nav2_mobile_robot amcl.launch.py
 
 # Terminal 3 — Nav2 stack (planner + controller)
-source /opt/ros/jazzy/setup.bash && source ~/shubham/wicon/simple_nav2_example/install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 launch nav2_mobile_robot navigation.launch.py use_sim_time:=true
 
 # Terminal 4 — RViz
-source /opt/ros/jazzy/setup.bash && source ~/shubham/wicon/simple_nav2_example/install/setup.bash
+source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 run rviz2 rviz2 -d src/nav2_mobile_robot/rviz/rviz.rviz
 ```
 
