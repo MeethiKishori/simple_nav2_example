@@ -178,7 +178,7 @@ local_costmap:
         max_obstacle_height: 2.0
         mark_threshold: 0
         observation_sources: scan
-        lidar:
+        scan:
           topic: /lidar
           max_obstacle_height: 2.0
           clearing: True
@@ -313,3 +313,28 @@ velocity_smoother:
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
+
+collision_monitor:
+  ros__parameters:
+    use_sim_time: True
+    base_frame_id: "base_link"
+    odom_frame_id: "odom"
+    cmd_vel_in_topic: "cmd_vel_smoothed"
+    cmd_vel_out_topic: "cmd_vel"
+    transform_tolerance: 0.5
+    source_timeout: 5.0
+    stop_pub_timeout: 2.0
+    observation_sources: ["scan"]
+    polygons: ["FootprintApproach"]
+    FootprintApproach:
+      type: "polygon"
+      action_type: "approach"
+      footprint_topic: "/local_costmap/published_footprint"
+      time_before_collision: 2.0
+      simulation_time_step: 0.02
+      min_points: 6
+      visualize: True
+      enabled: True
+    scan:
+      type: "scan"
+      topic: "/lidar"
