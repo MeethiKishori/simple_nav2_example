@@ -69,7 +69,7 @@ source /opt/ros/jazzy/setup.bash && source install/setup.bash
 ros2 run rviz2 rviz2 -d src/nav2_mobile_robot/rviz/rviz.rviz
 ```
 
-### Set initial pose (required every time Gazebo starts)
+### Set initial pose (required every time Gazebo starts) -- not urgent
 
 The robot spawns at (0, 0) in Gazebo. Tell AMCL where it is:
 ```bash
